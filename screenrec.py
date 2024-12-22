@@ -127,7 +127,7 @@ def muHelper(hDev, place):
 			time.sleep(1)
 			i+=1
 			print(f"Searching spot i: {i}")
-			if i> 5:
+			if i> 4:
 				print("Spot found")
 				return True
 
@@ -279,10 +279,12 @@ def sendInputToDev(char, action):
 			case 48: #0 startAction
 				StartAction(hDev, str_line)
 			case 49: #1 isActionFinished
-				if str_line[-4] == ',':
-					IsActionFinished(str_line[:-4], int(str_line[-2:]))
-				else:
-					IsActionFinished(str_line)
+				#it should search for ',' and not use -4
+				ret = IsActionFinished(str_line[:-4], int(str_line[-2:])) if str_line[-4] == ',' else IsActionFinished(str_line)
+				#this should be generic such as an go to in the file
+				if ret == False:
+					StartAction(hDev, "login2Minimize")
+					break
 			case 50: #2 sleep
 				time.sleep(int(str_line))
 			case 51: #3 end of file
@@ -293,7 +295,7 @@ def sendInputToDev(char, action):
 					freeSrv = getFirstFreeSrv()
 					if freeSrv is None :
 						print("All srvs are full")
-						freeSrv = randrange(9, 14)
+						freeSrv = randrange(6, 14)
 					StartAction(hDev, f"connect_mid{freeSrv}")
 				else :
 					#this should come from file
