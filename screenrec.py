@@ -299,7 +299,7 @@ def sendInputToDev(char, action):
 					StartAction(hDev, f"connect_mid{freeSrv}")
 				else :
 					#this should come from file
-					spots = ["muHelperFerea", "muHelperFereaSub", "muHelperUruk", "muHelperUrukSub", "muHelperDebenter", "muHelperDebenterSub"]
+					spots = str_line.split()[1:]
 					j = 0
 					while j < len(spots) and muHelper(hDev, spots[j]) == False:
 						j += 1
@@ -343,6 +343,9 @@ def Record():
 	SysOp(drvName, drvPath, DELETE_SYS)
 	SysOp(drvName, drvPath, STOP_SYS)
 
+def Monitor():
+	print("Monitor")
+
 def Play(chars):
 	drvName = "KbdMouFiltr"	
 	drvPath= f"{pathlib.Path(__file__).parent.resolve()}\\{drvName}.sys"
@@ -369,7 +372,7 @@ if( len(sys.argv) < 3):
 	print("Usage .\\screenRec <char>")
 	exit()
 
-print("0: Record \n1: Play\n2: Exit")
+print("0: Record \n1: Play\n2: Monitor\n3: Exit")
 c = sys.stdin.read(1)
 
 if(c == '0'):
@@ -377,6 +380,8 @@ if(c == '0'):
 elif(c == '1'):
 	Play(sys.argv)
 elif(c == '2'):
+	Monitor()
+elif(c == '3'):
 	print("Quitting")
 else:
 	print("Wrong input")
