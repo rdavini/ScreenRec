@@ -248,6 +248,9 @@ def StartAction(hDev, fileName):
 
 	f.close()
 
+def getLvl():
+	print("getLvl")
+
 #move inputs to file
 def sendInputToDev(char, action):
 	#open handle to device
@@ -303,6 +306,9 @@ def sendInputToDev(char, action):
 					j = 0
 					while j < len(spots) and muHelper(hDev, spots[j]) == False:
 						j += 1
+			case 53: #5 analyse screenshot
+				getLvl()
+
 			case _:
 				print(f"Unexpected action value {str_line}")
 		i += 1
