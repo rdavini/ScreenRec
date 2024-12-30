@@ -102,7 +102,7 @@ def muHelper(hDev, place):
 
 	i = 0
 	while(True) :
-		if IsActionFinished("no_warp.png", 1):
+		if IsActionFinished("no_warp.png", (925, 618, 200, 8), 1):
 			StartAction(hDev, "CancelMuHelper")
 			return False
 
@@ -133,6 +133,8 @@ def muHelper(hDev, place):
 
 
 def getFirstFreeSrv():
+	if cmpImgs('servers_full.png', (1090, 559, 190, 232)) > 0.9 :
+		return
 	num = 6	
 	while(num <= 14):
 		print(f"templates\\mid{num}_not_full.png")
@@ -172,27 +174,30 @@ def getFirstFreeSrv():
 			time.sleep(2)
 			print("Trying again")
 
-def IsActionFinished(action_fname, max_iter = sys.maxsize):
+def cmpImgs(action_fname, region):
+	print(f"{action_fname}")
+	if os.path.isfile(f"templates\\{action_fname}") == False:
+		print("file could not be read, check with os.path.exists()")
+		return
+
+	pyautogui.screenshot(f"screen.png", region)
+	img = cv.imread(f"screen.png", cv.IMREAD_GRAYSCALE)
+	assert img is not None, "file could not be read, check with os.path.exists()"
+
+	template = cv.imread(f"templates\\{action_fname}", cv.IMREAD_GRAYSCALE)
+	assert template is not None, "file could not be read, check with os.path.exists()"
+
+	meth= 'cv.TM_CCOEFF_NORMED' 
+	method = eval(meth)
+	res = cv.matchTemplate(img, template, method)
+
+	return cv.minMaxLoc(res)[1]
+
+def IsActionFinished(action_fname, region, max_iter = sys.maxsize):
 	i = 0
 	while(True):
-		print(f"{action_fname}")
-		if os.path.isfile(f"templates\\{action_fname}") == False:
-			print("file could not be read, check with os.path.exists()")
-			return
-
-		pyautogui.screenshot(f"screen.png")
-		img = cv.imread(f"screen.png", cv.IMREAD_GRAYSCALE)
-		assert img is not None, "file could not be read, check with os.path.exists()"
-
-		template = cv.imread(f"templates\\{action_fname}", cv.IMREAD_GRAYSCALE)
-		assert template is not None, "file could not be read, check with os.path.exists()"
-
-		meth= 'cv.TM_CCOEFF_NORMED' 
-		method = eval(meth)
-		res = cv.matchTemplate(img, template, method)
-		min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
-
-		print("max val: ", max_val)
+		max_val = cmpImgs(action_fname, region)
+		print("i: %d max_iter: %d max val: %d", i, max_iter, max_val)
 		i += 1
 		
 		if max_val > 0.8:
@@ -245,11 +250,12 @@ def StartAction(hDev, fileName):
 			print("entered END_ACTION")
 			print("sleeping")
 			break
-
 	f.close()
 
 def getLvl():
 	print("getLvl")
+	max_val = cmpImgs("test_case_19.png", (680, 370, 8, 15))
+	print("max val: ", max_val)
 
 #move inputs to file
 def sendInputToDev(char, action):
@@ -272,47 +278,45 @@ def sendInputToDev(char, action):
 	#4 connectToEmptySrv
 	#while True:
 	lines = f.readlines()
-	
-	i = 0
-	while(i< len(lines)):
-		str_line = str(lines[i][3:len(lines[i])-2])
-		str_line = str_line[2:len(str_line)-1]
-		print(str_line)
-		match(lines[i][0]):
-			case 48: #0 startAction
-				StartAction(hDev, str_line)
-			case 49: #1 isActionFinished
+	for i in range(0, len(lines)) :
+		print(lines[i].decode()[0])
+		if lines[i].decode()[0] == '#':
+			continue
+		str_line = lines[i].split()
+		cmd = int(str_line[0])
+		fargs = str_line[1:]
+		match(cmd):
+			case 0: #startAction
+				StartAction(hDev, fargs[0].decode())
+			case 1: #isActionFinished
 				#it should search for ',' and not use -4
-				ret = IsActionFinished(str_line[:-4], int(str_line[-2:])) if str_line[-4] == ',' else IsActionFinished(str_line)
+				ret = IsActionFinished(fargs[0].decode(), tuple(map(int, fargs[1].decode().split(','))), int(fargs[2]))
 				#this should be generic such as an go to in the file
 				if ret == False:
 					StartAction(hDev, "login2Minimize")
 					break
-			case 50: #2 sleep
+			case 2: #2 sleep
 				time.sleep(int(str_line))
-			case 51: #3 end of file
+			case 3: #end of file
 				print("End of file")
 				break
-			case 52: #4 connect to EmptySrv
-				if str_line == "connect_srv":
+			case 4: #connect to EmptySrv
+				if fargs[0].decode() == "connect_srv":
 					freeSrv = getFirstFreeSrv()
 					if freeSrv is None :
 						print("All srvs are full")
 						freeSrv = randrange(6, 14)
 					StartAction(hDev, f"connect_mid{freeSrv}")
 				else :
-					#this should come from file
-					spots = str_line.split()[1:]
+					spots = fargs[1:]
 					j = 0
-					while j < len(spots) and muHelper(hDev, spots[j]) == False:
+					while j < len(spots) and muHelper(hDev, spots[j].decode()) == False:
 						j += 1
-			case 53: #5 analyse screenshot
+			case 5: #analyse screenshot
 				getLvl()
 
 			case _:
 				print(f"Unexpected action value {str_line}")
-		i += 1
-	
 	f.close()
 	hDev.close()
 
@@ -351,6 +355,7 @@ def Record():
 
 def Monitor():
 	print("Monitor")
+	getLvl()
 
 def Play(chars):
 	drvName = "KbdMouFiltr"	
